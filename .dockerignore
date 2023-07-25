@@ -1,0 +1,8 @@
+**/.gitignore
+**/.git/
+**/.github/
+**/target/
+**/LICENSE
+**/README.md
+**/*.Dockerfile
+**/Cargo.lock
