@@ -1,0 +1,54 @@
+name: CI - Check Set-Up, Build & Test
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+    workflow_dispatch:
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Install Dependencies
+              run: |
+                  sudo apt-get update &&
+                  sudo apt-get install -y protobuf-compiler &&
+                  sudo rm -rf /var/lib/apt/lists/*
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
+
+            - name: Rust Cache
+              uses: Swatinem/rust-cache@988c164c3d0e93c4dbab36aaf5bbeb77425b2894 # v2.4.0
+              with:
+                  cache-on-failure: true
+                  cache-all-crates: true
+
+            - name: Check formatting
+              run: |
+                  cargo fmt --check
+
+            - name: Output versions
+              run: |
+                  cargo -vV
+
+            - name: Check building
+              run: |
+                  cargo check
+
+            - name: Run tests
+              run: |
+                  cargo test
+
+            - name: Check clippy linting
+              run: |
+                  cargo clippy --all-features

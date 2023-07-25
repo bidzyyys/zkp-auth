@@ -16,21 +16,21 @@ pub struct AuthService {}
 impl Auth for AuthService {
     async fn register(
         &self,
-        request: Request<RegisterRequest>,
+        _request: Request<RegisterRequest>,
     ) -> Result<Response<RegisterResponse>, Status> {
         unimplemented!();
     }
 
     async fn create_authentication_challenge(
         &self,
-        request: Request<AuthenticationChallengeRequest>,
+        _request: Request<AuthenticationChallengeRequest>,
     ) -> Result<Response<AuthenticationChallengeResponse>, Status> {
         unimplemented!();
     }
 
     async fn verify_authentication(
         &self,
-        request: Request<AuthenticationAnswerRequest>,
+        _request: Request<AuthenticationAnswerRequest>,
     ) -> Result<Response<AuthenticationAnswerResponse>, Status> {
         unimplemented!();
     }
