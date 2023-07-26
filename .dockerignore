@@ -1,8 +1,10 @@
 **/.gitignore
 **/.git/
 **/.github/
+**/.pre-commit-config.yaml
 **/target/
 **/LICENSE
 **/README.md
 **/*.Dockerfile
 **/Cargo.lock
+**/docker-compose.yml

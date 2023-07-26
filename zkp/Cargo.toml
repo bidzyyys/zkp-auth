@@ -1,0 +1,11 @@
+[package]
+name = "zkp"
+version = "0.1.0"
+edition = "2021"
+authors = ["Daniel Bigos <daniel.bigos@icloud.com>"]
+readme = "README.md"
+license = "Apache-2.0"
+
+[dependencies]
+num-traits = {version = "0.2.16"}
+rand = {version ="0.8.5"}

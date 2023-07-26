@@ -7,9 +7,9 @@ RUN apt-get update && \
 
 WORKDIR /usr/src/nillion
 
-COPY . .
+COPY .. .
 
-RUN cargo build --release --package server
+RUN cargo build --release --package auth_service
 
 # Runner
 FROM debian:12.0-slim
@@ -17,6 +17,6 @@ FROM debian:12.0-slim
 RUN apt-get update && \
    rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/nillion/target/release/server /usr/local/bin/server
+COPY --from=builder /usr/src/nillion/target/release/auth_service /usr/local/bin/auth_service
 
-CMD ["server"]
+CMD ["auth_service"]

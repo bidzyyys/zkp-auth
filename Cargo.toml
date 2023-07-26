@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "client",
-    "crypto",
-    "server"
-    ]
+    "auth_service",
+    "router",
+    "zkp"
+]

@@ -1,3 +1,4 @@
+use std::env;
 use tonic::{transport::Server, Request, Response, Status};
 use zkp_auth::{
     auth_server::{Auth, AuthServer},
@@ -8,6 +9,9 @@ use zkp_auth::{
 pub mod zkp_auth {
     tonic::include_proto!("zkp_auth");
 }
+
+const SERVER_LISTENING_ADDR_ENV: &str = "SERVER_LISTENING_ADDR";
+const LOG_TARGET: &str = "auth_service";
 
 #[derive(Debug, Default)]
 pub struct AuthService {}
@@ -38,12 +42,24 @@ impl Auth for AuthService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let address = "[::1]:8080".parse().unwrap();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
+    let server_address = env::var(SERVER_LISTENING_ADDR_ENV)
+        .expect(format!("Missing env variable: {:?}", SERVER_LISTENING_ADDR_ENV).as_str())
+        .parse()
+        .expect(format!("Invalid value set for {:?}", SERVER_LISTENING_ADDR_ENV).as_str());
+
+    log::info!(
+        target: LOG_TARGET,
+        "Starting auth_service on address: {:?}",
+        server_address
+    );
+
     let auth_service = AuthService::default();
 
     Server::builder()
         .add_service(AuthServer::new(auth_service))
-        .serve(address)
+        .serve(server_address)
         .await?;
     Ok(())
 }
