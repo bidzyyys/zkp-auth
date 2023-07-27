@@ -1,10 +1,8 @@
 use crate::ZKPAuth;
-use num_traits::CheckedMul;
 
 pub struct ChaumPedersenProtocol {
     g: i64,
     h: i64,
-    q: i64,
 }
 
 impl ZKPAuth for ChaumPedersenProtocol {
@@ -36,8 +34,13 @@ impl ZKPAuth for ChaumPedersenProtocol {
 }
 
 impl ChaumPedersenProtocol {
-    pub fn new(g: i64, h: i64, q: i64) -> Self {
-        Self { g, h, q }
+    pub fn new(g: i64, h: i64) -> Self {
+        Self { g, h }
+    }
+
+    // #TODO
+    pub fn calculate_challenge(c: i64) -> i64 {
+        c
     }
 }
 
@@ -46,7 +49,7 @@ mod tests {
     use super::*;
 
     fn protocol() -> ChaumPedersenProtocol {
-        ChaumPedersenProtocol::new(3, 2892, 10009)
+        ChaumPedersenProtocol::new(3, 2892)
     }
 
     fn init() -> (i64, ChaumPedersenProtocol) {

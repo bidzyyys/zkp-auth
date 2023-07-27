@@ -11,8 +11,11 @@ actix-web = { version = "4.3.1" }
 env_logger = { version = "0.10.0" }
 log = { version = "0.4.19" }
 prost = { version = "0.11.9" }
+serde = { version = "1.0.176", features = ["derive"] }
+serde_json = { version = "1.0.104" }
 tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
 tonic = { version = "0.9.2" }
+zkp = { path = "../zkp" }
 
 [build-dependencies]
 tonic-build = { version = "0.9.2" }
