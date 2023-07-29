@@ -1,17 +1,29 @@
-use crate::ZKPAuth;
-
 pub struct ChaumPedersenProtocol {
-    g: i64,
-    h: i64,
+    ctx: Context,
 }
 
-impl ZKPAuth for ChaumPedersenProtocol {
-    fn create_auth_challenge(&self) -> i64 {
+pub struct Context {
+    g: i64,
+    h: i64,
+    q: i64,
+}
+
+impl ChaumPedersenProtocol {
+    pub fn create_auth_challenge(&self) -> i64 {
         rand::random::<i64>()
     }
 
-    fn verify_auth_challenge(&self, y1: i64, y2: i64, r1: i64, r2: i64, c: i64, s: i64) -> bool {
+    pub fn verify_auth_challenge(
+        &self,
+        y1: i64,
+        y2: i64,
+        r1: i64,
+        r2: i64,
+        c: i64,
+        s: i64,
+    ) -> bool {
         let test_left_r1 = self
+            .ctx
             .g
             .checked_pow(s.try_into().expect("negative s"))
             .expect("left r1");
@@ -21,6 +33,7 @@ impl ZKPAuth for ChaumPedersenProtocol {
         let test_r1 = test_left_r1.checked_mul(test_right_r1).expect("r1");
 
         let test_left_r2 = self
+            .ctx
             .h
             .checked_pow(s.try_into().expect("negative s"))
             .expect("left r2");
@@ -33,11 +46,16 @@ impl ZKPAuth for ChaumPedersenProtocol {
     }
 }
 
-impl ChaumPedersenProtocol {
-    pub fn new(g: i64, h: i64) -> Self {
-        Self { g, h }
+impl Context {
+    pub fn new(g: i64, h: i64, q: i64) -> Self {
+        Self { g, h, q }
     }
+}
 
+impl ChaumPedersenProtocol {
+    pub fn new(ctx: Context) -> Self {
+        Self { ctx }
+    }
     // #TODO
     pub fn calculate_challenge(c: i64) -> i64 {
         c
@@ -49,7 +67,7 @@ mod tests {
     use super::*;
 
     fn protocol() -> ChaumPedersenProtocol {
-        ChaumPedersenProtocol::new(3, 2892)
+        ChaumPedersenProtocol::new(Context::new(3, 2892, 5980))
     }
 
     fn init() -> (i64, ChaumPedersenProtocol) {
