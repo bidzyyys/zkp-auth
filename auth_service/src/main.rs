@@ -107,6 +107,10 @@ impl Auth for AuthService {
                         tonic::Code::Unauthenticated,
                         "Negative challenge verification",
                     ),
+                    AuthActorError::ZKPMathError => (
+                        tonic::Code::ResourceExhausted,
+                        "Arithmetic overflow during challenge verification",
+                    ),
                     _ => (tonic::Code::Internal, "Unexpected server error"),
                 };
 

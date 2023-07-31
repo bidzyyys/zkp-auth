@@ -5,6 +5,6 @@
 **/target/
 **/LICENSE
 **/README.md
-**/*.Dockerfile
+**/Dockerfile
 **/Cargo.lock
 **/docker-compose.yml

@@ -79,7 +79,7 @@ impl AuthActor {
             Some(challenge) => challenge,
         };
 
-        match self.zkp.verify_auth_challenge(y1, y2, r1, r2, c, s) {
+        match self.zkp.verify_auth_challenge(y1, y2, r1, r2, c, s)? {
             false => Err(AuthActorError::AuthChallengeFailed),
             true => Ok(SessionDetails {
                 session_id: "test session".into(),

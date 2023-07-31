@@ -1,11 +1,10 @@
-use actix_web::{
-    middleware,
-    web::{self, Data},
-    App, HttpRequest, HttpResponse, HttpServer,
-};
+use actix_web::{middleware, post, web, web::Data, App, HttpResponse, HttpServer};
 
 use std::env;
 use std::sync::Mutex;
+
+use auth::{LoginData, RegisterCalculateRequest, RegisterData};
+use zkp::chaum_pedersen;
 
 use tonic::transport::Channel;
 
@@ -22,20 +21,34 @@ const HTTP_PORT_ENV: &str = "HTTP_PORT";
 
 const LOG_TARGET: &str = "router";
 
-async fn register(auth_client: Data<Mutex<AuthClient<Channel>>>, req: HttpRequest) -> HttpResponse {
-    log::info!("Handling request: {:?}", req);
+struct AppState {
+    auth_client: Mutex<AuthClient<Channel>>,
+    zkp: chaum_pedersen::ChaumPedersenProtocol,
+}
 
-    let register_data = auth::RegisterData {
-        username: "bidzyyys".into(),
-        y1: 1,
-        y2: 2,
-    };
+#[post("/register/calculate")]
+async fn register_calculate(
+    app_state: Data<AppState>,
+    data: web::Json<RegisterCalculateRequest>,
+) -> HttpResponse {
+    log::info!("Handling register calculate request: {:?}", data);
+
+    match auth::register_calculate(&app_state.zkp, &data.into_inner()) {
+        Ok(register_data) => register_data.into(),
+        Err(e) => e.into(),
+    }
+}
+
+#[post("/register")]
+async fn register(app_state: Data<AppState>, data: web::Json<RegisterData>) -> HttpResponse {
+    log::info!("Handling register request: {:?}", data);
 
     match auth::register(
-        &mut auth_client
+        &mut app_state
+            .auth_client
             .lock()
             .expect("Auth client must be available in `register` handler"),
-        register_data,
+        data.into_inner(),
     )
     .await
     {
@@ -44,19 +57,17 @@ async fn register(auth_client: Data<Mutex<AuthClient<Channel>>>, req: HttpReques
     }
 }
 
-async fn login(auth_client: Data<Mutex<AuthClient<Channel>>>, req: HttpRequest) -> HttpResponse {
-    log::info!("Handling request: {:?}", req);
-    let login_data = auth::LoginData {
-        username: "bidzyyys".into(),
-        r1: 1,
-        r2: 8,
-    };
+#[post("/login")]
+async fn login(app_state: Data<AppState>, data: web::Json<LoginData>) -> HttpResponse {
+    log::info!("Handling login request: {:?}", data);
 
     match auth::login(
-        &mut auth_client
+        &mut app_state
+            .auth_client
             .lock()
             .expect("Auth client must be available in `login` handler"),
-        login_data,
+        &app_state.zkp,
+        data.into_inner(),
     )
     .await
     {
@@ -89,17 +100,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .expect("Failed to connect to auth_service");
 
+    let g = 3i64;
+    let h = 5i64;
+    let q = 10009i64;
+
     HttpServer::new(move || {
         // Create thread-local auth_client
-        let auth_client = Data::new(Mutex::new(auth_client.clone()));
+        let app_state = AppState {
+            auth_client: Mutex::new(auth_client.clone()),
+            zkp: chaum_pedersen::ChaumPedersenProtocol::new(chaum_pedersen::Context::new(g, h, q)),
+        };
+        // let zkp = Data::new(§)
+        let json_config = web::JsonConfig::default()
+            .limit(4096)
+            .error_handler(|err, _req| {
+                // create custom error response
+                actix_web::error::InternalError::from_response(
+                    err,
+                    HttpResponse::Conflict().finish(),
+                )
+                .into()
+            });
+
         App::new()
-            .app_data(Data::new(auth_client)) // add thread-local auth_client
+            .app_data(Data::new(app_state)) // add thread-local auth_client
+            .app_data(json_config)
             // enable logger
             .wrap(middleware::Logger::default())
             // register `register` handler
-            .service(web::resource("/register").to(register))
+            .service(register)
             // register `login` handler
-            .service(web::resource("/login").to(login))
+            .service(login)
     })
     .bind(("0.0.0.0", http_port))
     .map_err(Box::new)?

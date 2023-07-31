@@ -1,16 +1,41 @@
 use actix_web::HttpResponse;
 
-use tonic::{transport::Channel, Request};
+use tonic::{transport::Channel, Code, Request};
 
 use crate::{
     zkp_auth::{AuthenticationAnswerRequest, AuthenticationChallengeRequest, RegisterRequest},
     AuthClient,
 };
 
-mod crypto;
+use error::AuthClientError;
+
+use zkp::chaum_pedersen::ChaumPedersenProtocol;
+
 mod error;
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct RegisterCalculateRequest {
+    user: String,
+    x: i64,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct RegisterCalculateResponse {
+    user: String,
+    y1: i64,
+    y2: i64,
+}
+
+impl From<RegisterCalculateResponse> for HttpResponse {
+    fn from(val: RegisterCalculateResponse) -> Self {
+        HttpResponse::Created().body(
+            serde_json::to_string(&val)
+                .expect("`RegisterCalculateResponse` is serializable to json"),
+        )
+    }
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
 pub struct RegisterData {
     pub username: String,
     pub y1: i64,
@@ -34,21 +59,11 @@ impl From<RegisterData> for HttpResponse {
     }
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
 pub struct LoginData {
-    pub username: String,
-    pub r1: i64,
-    pub r2: i64,
-}
-
-impl From<LoginData> for AuthenticationChallengeRequest {
-    fn from(val: LoginData) -> Self {
-        AuthenticationChallengeRequest {
-            user: val.username,
-            r1: val.r1,
-            r2: val.r2,
-        }
-    }
+    pub user: String,
+    pub x: i64,
+    pub k: i64,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -78,29 +93,48 @@ impl From<SessionData> for HttpResponse {
     }
 }
 
+pub fn register_calculate(
+    zkp: &ChaumPedersenProtocol,
+    data: &RegisterCalculateRequest,
+) -> Result<RegisterCalculateResponse, AuthClientError> {
+    let (y1, y2) = zkp.calculate_registration_data(data.x)?;
+    Ok(RegisterCalculateResponse {
+        user: data.user.clone(),
+        y1,
+        y2,
+    })
+}
+
 pub async fn register(
     auth_client: &mut AuthClient<Channel>,
     register_data: RegisterData,
-) -> Result<RegisterData, error::AuthClientError> {
+) -> Result<RegisterData, AuthClientError> {
     auth_client
         .register(Request::new(register_data.clone().into()))
         .await
         .map_or_else(
-            |_status| Err(error::AuthClientError::ConnectionFailed),
+            |status| Err(status.code().into()),
             |_response| Ok(register_data),
         )
 }
 
 pub async fn login(
     auth_client: &mut AuthClient<Channel>,
+    zkp: &ChaumPedersenProtocol,
     login_data: LoginData,
-) -> Result<SessionData, error::AuthClientError> {
-    let req: AuthenticationChallengeRequest = login_data.into();
+) -> Result<SessionData, AuthClientError> {
+    let (r1, r2) = zkp.calculate_registration_data(login_data.k)?;
+    let req = AuthenticationChallengeRequest {
+        user: login_data.user.clone(),
+        r1,
+        r2,
+    };
+
     let (auth_id, c) = auth_client
         .create_authentication_challenge(Request::new(req))
         .await
         .map_or_else(
-            |_status| Err(error::AuthClientError::ConnectionFailed),
+            |status| Err(<Code as Into<AuthClientError>>::into(status.code())),
             |response| {
                 let response = response.into_inner();
                 Ok((response.auth_id, response.c))
@@ -109,14 +143,14 @@ pub async fn login(
 
     let auth_challenge_data = AuthChallengeData {
         auth_id,
-        s: crypto::calculate_challenge(c),
+        s: zkp.calculate_challenge(login_data.k, c, login_data.x)?,
     };
 
     auth_client
         .verify_authentication(Request::new(auth_challenge_data.into()))
         .await
         .map_or_else(
-            |_status| Err(error::AuthClientError::ConnectionFailed),
+            |status| Err(status.code().into()),
             |response| {
                 Ok(SessionData {
                     session_id: response.into_inner().session_id,
