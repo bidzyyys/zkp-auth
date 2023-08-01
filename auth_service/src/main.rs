@@ -17,6 +17,10 @@ pub mod zkp_auth {
 }
 
 const SERVER_LISTENING_ADDR_ENV: &str = "SERVER_LISTENING_ADDR";
+const ZKP_G_ENV: &str = "ZKP_G";
+const ZKP_H_ENV: &str = "ZKP_H";
+const ZKP_Q_ENV: &str = "ZKP_Q";
+
 const LOG_TARGET: &str = "auth_service";
 
 type Actor = Arc<Mutex<AuthActor>>;
@@ -120,14 +124,27 @@ impl Auth for AuthService {
     }
 }
 
+fn read_env_var(name: &str) -> String {
+    env::var(name).unwrap_or_else(|_| panic!("Missing env variable: {:?}", name))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let server_address = env::var(SERVER_LISTENING_ADDR_ENV)
-        .expect(format!("Missing env variable: {:?}", SERVER_LISTENING_ADDR_ENV).as_str())
+    let server_address = read_env_var(SERVER_LISTENING_ADDR_ENV)
         .parse()
         .expect(format!("Invalid value set for {:?}", SERVER_LISTENING_ADDR_ENV).as_str());
+
+    let zkp_g = read_env_var(ZKP_G_ENV)
+        .parse()
+        .expect(format!("Invalid value set for {:?}", ZKP_G_ENV).as_str());
+    let zkp_h = read_env_var(ZKP_H_ENV)
+        .parse()
+        .expect(format!("Invalid value set for {:?}", ZKP_H_ENV).as_str());
+    let zkp_q = read_env_var(ZKP_Q_ENV)
+        .parse()
+        .expect(format!("Invalid value set for {:?}", ZKP_Q_ENV).as_str());
 
     log::info!(
         target: LOG_TARGET,
@@ -135,7 +152,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         server_address
     );
 
-    let zkp_ctx = chaum_pedersen::Context::new(1, 1, 1);
+    let zkp_ctx = chaum_pedersen::Context::new(zkp_g, zkp_h, zkp_q);
     let auth_actor = Arc::new(Mutex::new(AuthActor::new(zkp_ctx)));
 
     let auth_service = AuthService::new(auth_actor);

@@ -7,6 +7,9 @@ services:
       dockerfile: ./auth_service/Dockerfile
     container_name: auth-service
     environment:
+      - ZKP_G=3
+      - ZKP_H=5
+      - ZKP_Q=10009
       - RUST_LOG=info
       - SERVER_LISTENING_ADDR=0.0.0.0:6969
     ports:
@@ -18,6 +21,9 @@ services:
       dockerfile: ./router/Dockerfile
     container_name: router
     environment:
+      - ZKP_G=3
+      - ZKP_H=5
+      - ZKP_Q=10009
       - RUST_LOG=info
       - HTTP_PORT=8080
       - AUTH_SERVICE_URI=http://auth-service:6969

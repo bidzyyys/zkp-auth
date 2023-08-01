@@ -18,6 +18,9 @@ mod auth;
 
 const AUTH_SERVICE_URI_ENV: &str = "AUTH_SERVICE_URI";
 const HTTP_PORT_ENV: &str = "HTTP_PORT";
+const ZKP_G_ENV: &str = "ZKP_G";
+const ZKP_H_ENV: &str = "ZKP_H";
+const ZKP_Q_ENV: &str = "ZKP_Q";
 
 const LOG_TARGET: &str = "router";
 
@@ -76,19 +79,31 @@ async fn login(app_state: Data<AppState>, data: web::Json<LoginData>) -> HttpRes
     }
 }
 
+fn read_env_var(name: &str) -> String {
+    env::var(name).unwrap_or_else(|_| panic!("Missing env variable: {:?}", name))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let auth_service_address: String = env::var(AUTH_SERVICE_URI_ENV)
-        .expect(format!("Missing env variable: {:?}", AUTH_SERVICE_URI_ENV).as_str())
+    let auth_service_address: String = read_env_var(AUTH_SERVICE_URI_ENV)
         .parse()
         .expect(format!("Invalid value set for {:?}", AUTH_SERVICE_URI_ENV).as_str());
 
-    let http_port = env::var(HTTP_PORT_ENV)
-        .expect(format!("Missing env variable: {:?}", HTTP_PORT_ENV).as_str())
+    let http_port = read_env_var(HTTP_PORT_ENV)
         .parse()
         .expect(format!("Invalid value set for {:?}", AUTH_SERVICE_URI_ENV).as_str());
+
+    let zkp_g = read_env_var(ZKP_G_ENV)
+        .parse()
+        .expect(format!("Invalid value set for {:?}", ZKP_G_ENV).as_str());
+    let zkp_h = read_env_var(ZKP_H_ENV)
+        .parse()
+        .expect(format!("Invalid value set for {:?}", ZKP_H_ENV).as_str());
+    let zkp_q = read_env_var(ZKP_Q_ENV)
+        .parse()
+        .expect(format!("Invalid value set for {:?}", ZKP_Q_ENV).as_str());
 
     log::info!(
         target: LOG_TARGET,
@@ -100,15 +115,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .expect("Failed to connect to auth_service");
 
-    let g = 3i64;
-    let h = 5i64;
-    let q = 10009i64;
-
     HttpServer::new(move || {
         // Create thread-local auth_client
         let app_state = AppState {
             auth_client: Mutex::new(auth_client.clone()),
-            zkp: chaum_pedersen::ChaumPedersenProtocol::new(chaum_pedersen::Context::new(g, h, q)),
+            zkp: chaum_pedersen::ChaumPedersenProtocol::new(chaum_pedersen::Context::new(
+                zkp_g, zkp_h, zkp_q,
+            )),
         };
         // let zkp = Data::new(§)
         let json_config = web::JsonConfig::default()
