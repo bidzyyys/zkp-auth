@@ -123,7 +123,7 @@ pub async fn login(
     zkp: &ChaumPedersenProtocol,
     login_data: LoginData,
 ) -> Result<SessionData, AuthClientError> {
-    let (r1, r2) = zkp.calculate_registration_data(login_data.k)?;
+    let (r1, r2) = zkp.calculate_login_challenge_data(login_data.k)?;
     let req = AuthenticationChallengeRequest {
         user: login_data.user.clone(),
         r1,
