@@ -12,7 +12,6 @@ repos:
           - id: check-json
           - id: check-merge-conflict
 
-
     - repo: https://github.com/crate-ci/typos
       rev: v1.16.1
       hooks:
@@ -55,4 +54,32 @@ repos:
             entry: cargo check
             language: system
             types: [rust]
+            pass_filenames: false
+
+          - id: js-prettier
+            name: js-prettier
+            description: Format JS with Prettier
+            entry: yarn prettier --write .
+            language: system
+            pass_filenames: false
+
+          - id: js-prettier-check
+            name: js-prettier-check
+            description: Check JS Formatting with Prettier
+            entry: yarn prettier --check .
+            language: system
+            pass_filenames: false
+
+          - id: js-eslint
+            name: js-eslint
+            description: Format JS with ESLint
+            entry: yarn run eslint . --fix
+            language: system
+            pass_filenames: false
+
+          - id: js-eslint-check
+            name: js-eslint-check
+            description: Check JS Formatting with ESLint
+            entry: yarn run eslint .
+            language: system
             pass_filenames: false

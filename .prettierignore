@@ -1,0 +1,11 @@
+**/*.rs
+**/Dockerfile
+**/docker-compose.yml
+**/.git/
+**/.github/
+**/auth_service/
+**/node_modules/
+**/protos/
+**/router/
+**/target/
+**/zkp/

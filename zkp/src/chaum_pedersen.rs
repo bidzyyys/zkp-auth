@@ -148,7 +148,7 @@ mod tests {
     }
 
     #[test]
-    fn should_reject_valid_challenge() {
+    fn should_reject_invalid_challenge() {
         let (secret, zkp) = init();
         let (y1, y2) = zkp.calculate_registration_data(secret).unwrap();
         let (r1, r2) = zkp.calculate_login_challenge_data(CHALLENGE_K).unwrap();

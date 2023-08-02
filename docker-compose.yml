@@ -27,5 +27,7 @@ services:
       - RUST_LOG=info
       - HTTP_PORT=8080
       - AUTH_SERVICE_URI=http://auth-service:6969
+    ports:
+      - 8080:8080
     links:
       - auth-service

@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .parse()
         .expect(format!("Invalid value set for {:?}", AUTH_SERVICE_URI_ENV).as_str());
 
-    let http_port = read_env_var(HTTP_PORT_ENV)
+    let http_port: u16 = read_env_var(HTTP_PORT_ENV)
         .parse()
         .expect(format!("Invalid value set for {:?}", AUTH_SERVICE_URI_ENV).as_str());
 
@@ -123,7 +123,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 zkp_g, zkp_h, zkp_q,
             )),
         };
-        // let zkp = Data::new(§)
         let json_config = web::JsonConfig::default()
             .limit(4096)
             .error_handler(|err, _req| {
@@ -140,7 +139,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .app_data(json_config)
             // enable logger
             .wrap(middleware::Logger::default())
-            // register `register` handler
+            // register `register_calculate` handler
+            .service(register_calculate)
+            // register `register_calculate` handler
             .service(register)
             // register `login` handler
             .service(login)

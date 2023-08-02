@@ -1,4 +1,4 @@
-use actix_web::HttpResponse;
+use actix_web::{http::header::ContentType, HttpResponse};
 
 use tonic::{transport::Channel, Code, Request};
 
@@ -28,10 +28,12 @@ pub struct RegisterCalculateResponse {
 
 impl From<RegisterCalculateResponse> for HttpResponse {
     fn from(val: RegisterCalculateResponse) -> Self {
-        HttpResponse::Created().body(
-            serde_json::to_string(&val)
-                .expect("`RegisterCalculateResponse` is serializable to json"),
-        )
+        HttpResponse::Created()
+            .content_type(ContentType::json())
+            .body(
+                serde_json::to_string(&val)
+                    .expect("`RegisterCalculateResponse` is serializable to json"),
+            )
     }
 }
 
@@ -55,6 +57,7 @@ impl From<RegisterData> for RegisterRequest {
 impl From<RegisterData> for HttpResponse {
     fn from(val: RegisterData) -> Self {
         HttpResponse::Created()
+            .content_type(ContentType::json())
             .body(serde_json::to_string(&val).expect("`RegisterData` is serializable to json"))
     }
 }
@@ -89,6 +92,7 @@ pub struct SessionData {
 impl From<SessionData> for HttpResponse {
     fn from(val: SessionData) -> Self {
         HttpResponse::Ok()
+            .content_type(ContentType::json())
             .body(serde_json::to_string(&val).expect("`SessionData` is serializable to json"))
     }
 }
@@ -109,13 +113,13 @@ pub async fn register(
     auth_client: &mut AuthClient<Channel>,
     register_data: RegisterData,
 ) -> Result<RegisterData, AuthClientError> {
-    auth_client
-        .register(Request::new(register_data.clone().into()))
-        .await
-        .map_or_else(
-            |status| Err(status.code().into()),
-            |_response| Ok(register_data),
-        )
+    let req = register_data.clone().into();
+    log::info!("Sending gRPC request: {:?}", req);
+
+    auth_client.register(Request::new(req)).await.map_or_else(
+        |status| Err(status.code().into()),
+        |_response| Ok(register_data),
+    )
 }
 
 pub async fn login(
@@ -129,6 +133,8 @@ pub async fn login(
         r1,
         r2,
     };
+
+    log::info!("Sending gRPC request: {:?}", req);
 
     let (auth_id, c) = auth_client
         .create_authentication_challenge(Request::new(req))
@@ -146,8 +152,11 @@ pub async fn login(
         s: zkp.calculate_challenge(login_data.k, c, login_data.x)?,
     };
 
+    let req = auth_challenge_data.into();
+    log::info!("Sending gRPC request: {:?}", req);
+
     auth_client
-        .verify_authentication(Request::new(auth_challenge_data.into()))
+        .verify_authentication(Request::new(req))
         .await
         .map_or_else(
             |status| Err(status.code().into()),

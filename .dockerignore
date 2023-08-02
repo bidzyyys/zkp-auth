@@ -8,3 +8,11 @@
 **/Dockerfile
 **/Cargo.lock
 **/docker-compose.yml
+**/package-json
+**/yarn.lock
+**/node_modules/
+**/test/
+**/.eslintignore
+**/.eslintrc.js
+**/.prettierrignore
+**/.prettierrc.json

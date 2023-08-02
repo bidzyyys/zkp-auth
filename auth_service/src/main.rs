@@ -42,6 +42,8 @@ impl Auth for AuthService {
         request: Request<RegisterRequest>,
     ) -> Result<Response<RegisterResponse>, Status> {
         let request = request.into_inner();
+        log::info!("Handling register request: {:?}", request);
+
         let actor = &mut self
             .auth_actor
             .lock()
@@ -66,6 +68,11 @@ impl Auth for AuthService {
         request: Request<AuthenticationChallengeRequest>,
     ) -> Result<Response<AuthenticationChallengeResponse>, Status> {
         let request = request.into_inner();
+        log::info!(
+            "Handling create authentication challenge request: {:?}",
+            request
+        );
+
         let actor = &mut self
             .auth_actor
             .lock()
@@ -93,6 +100,8 @@ impl Auth for AuthService {
         request: Request<AuthenticationAnswerRequest>,
     ) -> Result<Response<AuthenticationAnswerResponse>, Status> {
         let request = request.into_inner();
+        log::info!("Handling verify authentication request: {:?}", request);
+
         let actor = &mut self
             .auth_actor
             .lock()
