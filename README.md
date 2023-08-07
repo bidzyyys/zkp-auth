@@ -1,10 +1,10 @@
-# Nillion-Assignment
+# ZKP Auth
 
 This repository contains implementation of new authentication protocol based on Chaum Pedersen Protocol.
 
-[![CI - Check Set-Up, Build & Test](https://github.com/bidzyyys/nillion-assignment/actions/workflows/ci.yml/badge.svg)](https://github.com/bidzyyys/nillion-assignment/actions/workflows/ci.yml)
+[![CI - Check Set-Up, Build & Test](https://github.com/bidzyyys/zkp-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/bidzyyys/zkp-auth/actions/workflows/ci.yml)
 
--   [Nillion-Assignment](#nillion-assignment)
+-   [ZKP Auth](#zkp-auth)
 
     -   [Overview](#overview)
         -   [Components](#components)
